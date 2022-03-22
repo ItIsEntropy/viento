@@ -21,8 +21,8 @@ def lock_file(file_name: Path, mode: str = 'r', blocking=True) -> NoReturn:
         open_file: Path = open(file_name, mode)
         position: int = open_file.tell()  # get the current byte position in the file
         if os.name == 'nt':
-            lock_mode = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
-            n_bytes = open_file.seek(0, 2)
+            lock_mode: int = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
+            n_bytes: int = open_file.seek(0, 2)
             try:
                 msvcrt.locking(open_file.fileno(), lock_mode, n_bytes)
             except OSError as e:
@@ -50,10 +50,9 @@ def unlock_file(file_name: Path, mode: str = 'r') -> NoReturn:
 
     try:
         open_file: Path = open(file_name, mode)
-        position: int = open_file.tell()  # get the current byte position in the file
         if os.name == 'nt':
-            lock_mode = msvcrt.LK_UNLCK
-            n_bytes = open_file.seek(0, 2)
+            lock_mode: int = msvcrt.LK_UNLCK
+            n_bytes: int = open_file.seek(0, 2)
             try:
                 msvcrt.locking(open_file.fileno(), lock_mode, n_bytes)
             except OSError as e:

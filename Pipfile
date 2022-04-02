@@ -7,6 +7,8 @@ name = "pypi"
 requests = "*"
 fastapi = "*"
 uvicorn = {extras = ["standard"], version = "*"}
+"ruamel.yaml" = "*"
+python-decouple = "*"
 
 [dev-packages]
 pytest = "*"

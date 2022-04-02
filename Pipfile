@@ -13,6 +13,7 @@ python-decouple = "*"
 [dev-packages]
 pytest = "*"
 tox = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.10"

@@ -2,23 +2,22 @@
 import io
 import os
 import sys
+import asyncio
 from pathlib import Path
-from typing import NoReturn
 
 
-def lock_file(file_name: Path, mode: str = 'r', blocking: bool = True) -> NoReturn:
-    """
-    Synchronously lock a file. Use either a blocking or non-blocking lock based on the above command.
-    :param file_name: Path file representing the path to the file to lock
-    :param mode: a string representing the mode to use when opening the file
-    :param blocking: a boolean showing whether to use a blocking lock or not
-    :return: NoReturn. does not return anything
+class Mortice:
+    @staticmethod
+    def lock_file(open_file: io.TextIOWrapper, mode: str = 'r', blocking: bool = True) -> None:
+        """
+        Synchronously lock a file. Use either a blocking or non-blocking lock based on the above command.
+        :param file_name: Path file representing the path to the file to lock
+        :param mode: a string representing the mode to use when opening the file
+        :param blocking: a boolean showing whether to use a blocking lock or not
+        :return: NoReturn. does not return anything
 
-    This method works on NT based, and POSIX compliant systems
-    """
-    # Define error variables
-
-    with open(file=file_name, mode='w') as open_file:
+        This method works on NT based, and POSIX compliant systems
+        """
         lock_mode: int = None
         write_modes: list[str] = ['w', 'w+', 'w+b', 'r+', 'r+b', 'a', 'a+b', 'ab', 'wb', 'wt', 'w+t']    
         read_modes: list[str] = ['r', 'rt', 'rb']
@@ -45,20 +44,16 @@ def lock_file(file_name: Path, mode: str = 'r', blocking: bool = True) -> NoRetu
             msg: str = f"Unknown platform {sys.platform}.\n Mortice only supports 'Windows NT' and 'POSIX compliant' systems."
             raise RuntimeError(msg)
     
+    @staticmethod
+    def unlock_file(open_file: io.TextIOWrapper, mode: str = 'r') -> None:
+        """
+            Synchronously ulock a file.
+            :param file_name: Path file representing the path to the file to lock
+            :param mode: a string representing the mode to use when opening the file
+            :return: Does not return
 
-
-def unlock_file(file_name: Path, mode: str = 'r') -> NoReturn:
-    """
-        Synchronously ulock a file.
-        :param file_name: Path file representing the path to the file to lock
-        :param mode: a string representing the mode to use when opening the file
-        :return: Does not return
-
-        This method works on NT based, and POSIX compliant systems
-    """
-
-    try:
-        open_file: Path = open_or_create(file_name, mode)
+            This method works on NT based, and POSIX compliant systems
+        """
         if os.name == 'nt':  # systems with Windows NT kernel
             import msvcrt
             lock_mode: int = msvcrt.LK_UNLCK  # use unlock mode
@@ -71,42 +66,35 @@ def unlock_file(file_name: Path, mode: str = 'r') -> NoReturn:
         else:
             msg: str = f"Unknown platform {sys.platform}.\n Mortice only supports 'Windows NT' and 'POSIX' systems."
             raise RuntimeError(msg)
-    except OSError as e:
-        raise e
-        pass  # TODO: Do something with the error, inform user and gracefully exit
+
+    def __init__(self, file_path: Path, mode: str = 'r', blocking: bool = True) -> None:
+        self.open_file: io.TextIOWrapper = open(file=file_path, mode=mode, blocking=blocking)
+        self.mode: str = mode
+        self.blocking: bool = blocking 
+
+    def __enter__(self):
+        # TODO: lock file
+        # TODO: handle errors by err num, 36 means retry after a short sleep
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # TODO: lock file
+        # TODO: handle errors 
+        if isinstance(exc_value, OSError):
+            # Handle OS error by errno here...
+            print(f"This exception occurred trying to lock the file: {exc_type}")
+            print(f"Exception message: {exc_value}")
+            return True
+        pass
+
+    async def __aenter__(Self):
+        # TODO: lock file
+        # TODO: handle errors by err num, 36 means retry after a short aio.sleep
+        pass
+
+    async def __aexit__(self, exc_type, exc_value, exc_tb):
+        # TODO: lock file
+        # TODO: handle errors 
+        pass
 
 
-async def lock_async(open_file: Path, mode: str) -> Path:
-    pass  # TODO: flesh out
-
-
-async def unlock_async(open_file: Path, mode: str) -> Path:
-    pass  # TODO: flesh out
-
-def acquire_lock(file_name: Path, mode: str = 'r', blocking: bool = True) -> io.TextIOWrapper :
-    lock_file(file_name=file_name, mode=mode, blocking=blocking)
-    pass
-    
-
-def get_file(file_name: Path, mode: str = 'r', blocking: bool = True) -> Path:
-    def __enter__():
-        data_file = open_or_create(file_name=file_name, mode=mode, blocking=blocking)
-        return data_file
-
-
-    def __exit__():
-        # TODO close file
-        # TODO: unlock file
-        pass  # TODO: flesh out
-
-    pass  # TODO: flesh out
-
-
-async def get_file_async(file_name: Path, mode: str = 'r', blocking: bool = True) -> Path:
-    def __enter__():
-        pass  # TODO: flesh out
-
-    def __exit__():
-        pass  # TODO: flesh out
-
-    pass  # TODO: flesh out

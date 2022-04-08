@@ -79,7 +79,7 @@ class Mortice:
         self.mode: str = mode
         self.blocking: bool = blocking
 
-    def __enter__(self):
+    def __enter__(self) -> io.TextIOWrapper:
         wait_time: int = 1
         while wait_time < 11:  # If the caller doesnt mind being blocked we gracefully degrade
             try:
@@ -95,7 +95,7 @@ class Mortice:
                 else:  # unknown error, raise it
                     raise e
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> bool:
         self.unlock_file(self.open_file)
         if isinstance(exc_value, OSError):
             # Handle OS error by errno here...
@@ -105,7 +105,7 @@ class Mortice:
         else:
             return False
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> io.TextIOWrapper:
         wait_time: int = 1
         while wait_time < 11:  # If the caller doesnt mind being blocked we gracefully degrade
             wait_time: int = 1
@@ -120,7 +120,7 @@ class Mortice:
                 else:  # unknown error, raise it
                     raise e
 
-    async def __aexit__(self, exc_type, exc_value, exc_tb):
+    async def __aexit__(self, exc_type, exc_value, exc_tb) -> bool:
         self.unlock_file(self.open_file)
         if isinstance(exc_value, OSError):
             # Handle OS error by errno here...

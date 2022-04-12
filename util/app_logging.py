@@ -9,6 +9,6 @@ async def get_handlers() -> list[logging.Handler]:
     '''
     # get all viento.log_handlers entrypoints, and make a list of log handlers from it
     handlers: dict[str, logging.Handler] = [
-        entrypoint for entrypoint in tuple(importlib.metadata.entry_points().select()['viento.log_handlers'])
+        entrypoint for entrypoint in importlib.metadata.entry_points().select()['viento.log_handlers']
     ]
     return handlers

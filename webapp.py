@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from util.cache import get_weather
+from util.net import get_weather_data
 from typing import Any
 from util.exceptions import APIError, APILimitError
 
@@ -25,7 +25,7 @@ async def get_forecast(latitude: str, longitude: str):
     '''
     url: str = 'https://api.openweathermap.org/data/2.5/forecast'
     try:
-        response: dict[str, dict[str, Any]] = get_weather(latitude = latitude, longitude = longitude, url = url)
+        response: dict[str, dict[str, Any]] = get_weather_data(latitude = latitude, longitude = longitude, url = url)
     except (OSError, APIError, APILimitError):
         # TODO: Make an error 50x
         pass

@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from util.cache import get_weather
+from typing import Any
+from util.exceptions import APIError, APILimitError
 
 app = FastAPI()  # Import the app
 
@@ -20,5 +23,16 @@ async def get_forecast(latitude: str, longitude: str):
     :param longitude: The location longitude
     :return: None
     '''
-    pass # TODO: flesh out by using cache to get data
+    url: str = 'https://api.openweathermap.org/data/2.5/forecast'
+    try:
+        response: dict[str, dict[str, Any]] = get_weather(latitude = latitude, longitude = longitude, url = url)
+    except (OSError, APIError, APILimitError):
+        # TODO: Make an error 50x
+        pass
+    # TODO: return 
+
+@app.get('/current')
+async def get_current_weather(latitude: str, longitude: str):
+    # Get the current weather of the caller's location
+    url: str = 'https://api.openweathermap.org/data/2.5/weather'
 

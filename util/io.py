@@ -26,5 +26,5 @@ async def get_file_locker() -> Any:
         except KeyError:
             msg = f'File locker {locker_name} is not available.\navailabler file lockers: {", ".join(sorted(lockers))}'
             print(msg) # TODO: Log this properly
-        raise ValueError(msg)
+            raise ValueError(msg)
         

@@ -15,7 +15,7 @@ async def get_file_locker() -> Any:
     '''
     # get all viento.filelocker entrypoints, and make a dictionary of `{locker_name: file_locker}`
     lockers: dict[str, Any] = {
-        entrypoint.name: entrypoint for entrypoint in tuple(importlib.metadata.entry_points().select()['viento.file_lockers'])
+        entrypoint.name: entrypoint for entrypoint in importlib.metadata.entry_points().select()['viento.file_lockers']
     }
     working_dir: Path = Path(os.getcwd())
     with open(working_dir.joinpath('config.yaml'), 'r') as config_file:

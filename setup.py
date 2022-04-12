@@ -13,6 +13,6 @@ setup(
     platforms=['win32', 'linux', 'unix', 'bsd', 'darwin'],
     entry_points = {
         'viento.log_handlers': [],
-        'viento.file_lockers' : [],
+        # 'viento.file_lockers' : [],
     }
 )

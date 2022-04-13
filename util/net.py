@@ -3,7 +3,7 @@ from typing import Any
 from decouple import config
 from util.exceptions import APILimitError, APIError
 from util.cache import cached
-from util.typing import WeatherData
+from util.typing import VientoResponse
 
 
 
@@ -17,7 +17,7 @@ async def get_weather_data(
         latitude: str,
         longitude: str,
         url: str
-) -> WeatherData | APIError:
+) -> VientoResponse | APIError:
     """
     Get the 5 day, 3hour forecast for the area specified by latitude and longitude.
     :param longitude: a string representing the area longitude
@@ -29,12 +29,16 @@ async def get_weather_data(
     response: requests.Response = requests.get(url=url, params=query_params)
     match response.status_code:  # Check the status of the request
         case 200:  # request successful, return the response data
-            return response.json()
+            json_rep: dict = response.json()
+            data_list: VientoResponse = [
+                prediction['wind'] for prediction in data_list['list']
+            ]
+            return data_list
         case 429:  # API limit reached, return exception
             raise APILimitError(f'API limit exceeded. Unable to acquire Forecast for lat={latitude}, lon={longitude}')
         case _:  # unknown status code, do future stuff
             if response.ok:
-                pass
+                pass # TODO: good response, not a 200. Figure out what to do
             else:
                 raise APIError('Unknown API Error occured')
 

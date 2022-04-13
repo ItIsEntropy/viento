@@ -1,5 +1,5 @@
 from util.net import get_weather_data
-from util.typing import LocationData, URLData, DataCache, WeatherData
+from util.typing import LocationData, DataCache, WeatherData
 from typing import Any, Callable
 from util.io import get_file_locker
 from pathlib import Path
@@ -29,7 +29,7 @@ async def get_weather(latitude: str, longitude: str, url: str) -> DataCache | No
     async with locker(cache_path) as cache_file:
         cache: DataCache = json.load(cache_file) # read json data of the file
         try:
-            data: LocationData = cache[url][','.join([latitude, longitude])]
+            data: LocationData = cache[f'{url},{latitude},{longitude}']
             data_age: float = time.time() - data['time']
             if data_age > 600.0: 
                 # data's time stamp is more than 10 minutes old, invalidate it by returning None
@@ -43,12 +43,13 @@ async def cache_data(data:WeatherData, url:str, lat:str, lon:str) -> None:
     # get locker plugin
     locker: Any = await get_file_locker()
     cache_path: Path = Path(os.getcwd()).joinpath('response_cache.json')
-    loc_data: LocationData = {f'{lat},{lon}': data}
-    url_data: URLData = {url, LocationData}
+    loc_data: LocationData = {'data': data, 'time': time.time()}
+    # TODO: figure out how to none distructively update the dict with new data
     # open cache file and lock it
     async with locker(cache_path) as cache_file:
         cache: DataCache = json.load(cache_file) # read json data of the file
-
+        cache[f'{url},{lat},{lon}'] = loc_data # store our new data into the data cache
+        json.dump(obj=cache, fp=cache_file)
     raise NotImplementedError('Flesh this out')
     
 

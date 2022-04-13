@@ -16,8 +16,8 @@ os_errors: dict[str, dict[[str, int]]] = {
         E_NOT_LK: 13,
     },
     'posix': {
-        E_WOULD_BLK: 36,  # TODO: get posix value
-        E_NOT_LK: 13,  # TODO: get posix value
+        E_WOULD_BLK: 36,  # TODO: get true posix value
+        E_NOT_LK: 13,  # TODO: get true posix value
     },
 }
 
@@ -90,13 +90,21 @@ class Mortice:
             msg: str = f"Unknown platform {sys.platform}.\n Mortice only supports 'Windows NT' and 'POSIX' systems."
             raise RuntimeError(msg)
 
-    def __init__(self, file_path: Path | str, mode: str = 'r', blocking: bool = True) -> None:
+    def __init__(self, file_path: Path | str, mode: str = 'r', blocking: bool = True, ttl: int = 10) -> None:
+        '''
+        Initialise the Mortice object and give it values for use in its context manager
+        :param file_path: Path or  string pointing to the location of file to be locked
+        :param mode: mode to open the object with, used to determine lock type
+        :param blocking: boolean that determines whether the lock is blocking or nonblocking
+        :param ttl: Time To Live, amount of time to block before giving up
+        '''
         if isinstance(file_path, str):  # convert strings to Paths
             file_path = Path(os.getcwd()).joinpath(file_path)
         self.open_file: io.TextIOWrapper = open(file=file_path, mode=mode)
         print(f'file: {self.open_file}')
         self.mode: str = mode
         self.blocking: bool = blocking
+        self.ttl = ttl
 
     def __enter__(self) -> io.TextIOWrapper:
         wait_time: int = 1
@@ -111,7 +119,7 @@ class Mortice:
                     if self.blocking:  # If the caller doesn't mind being blocked, gracefully degrade, otherwise raise e
                         time.sleep(wait_time)
                         wait_time += 2  # increase wait time
-                        if wait_time > 10:  # drop off request, wait is too long
+                        if wait_time > self.ttl:  # drop off request, wait is too long
                             raise e
                     else:
                         raise e
@@ -143,7 +151,7 @@ class Mortice:
                     if self.blocking:  # If the caller doesn't mind being blocked, gracefully degrade, otherwise raise e
                         await asyncio.sleep(wait_time)
                         wait_time += 2  # increase wait time
-                        if wait_time > 10:
+                        if wait_time > self.ttl:
                             raise e
                     else:
                         raise e

@@ -1,10 +1,8 @@
-from util.net import get_weather_data
 from util.typing import LocationData, DataCache, WeatherData
 from typing import Any, Callable
 from util.io import get_file_locker
 from pathlib import Path
 import time
-import decimal
 import os
 import json
 import asyncio
@@ -39,18 +37,15 @@ async def get_weather(latitude: str, longitude: str, url: str) -> DataCache | No
             return None
 
 async def cache_data(data:WeatherData, url:str, lat:str, lon:str) -> None:
-    # TODO: cache the passed data into the file using a lock
     # get locker plugin
     locker: Any = await get_file_locker()
     cache_path: Path = Path(os.getcwd()).joinpath('response_cache.json')
     loc_data: LocationData = {'data': data, 'time': time.time()}
-    # TODO: figure out how to none distructively update the dict with new data
     # open cache file and lock it
     async with locker(cache_path) as cache_file:
         cache: DataCache = json.load(cache_file) # read json data of the file
         cache[f'{url},{lat},{lon}'] = loc_data # store our new data into the data cache
         json.dump(obj=cache, fp=cache_file)
-    raise NotImplementedError('Flesh this out')
     
 
 
@@ -66,9 +61,8 @@ def cached(func) -> Callable[[Callable], Callable]: #TODO: rename after strategy
         url: str = kw['url']
         lat: str = kw['latitude']
         lon: str = kw['longitude']
-        decimal.getcontext().prec = 4 # set the decimal number precision to 4 places TODO: figure out correct precision
-        lat = str(decimal.Decimal(lat)) # reduce latitude to 4 sig fig
-        lon = str(decimal.Decimal(lon)) # reduce longitude to 4 sig fig
+        lat = str( round( float(lat), 4 ) ) # reduce latitude precision to 4 sig figs
+        lon = str( round( float(lon), 4 ) ) # reduce longitude precision to 4 sig figs
         cached_value: LocationData = await get_weather(latitude=lat, longitude=lon, url=url)#func(*a,**kw)
         if cached_value is None:
             net_data: LocationData  = await func(latitude=lat, longitude=lon, url=url)
@@ -77,14 +71,3 @@ def cached(func) -> Callable[[Callable], Callable]: #TODO: rename after strategy
         return cached_value
     return cache_or_net
 
-
-'''
-{
-    url: {
-            f'{lat},{lon}': {
-                'data': data
-                'time': timestamp (on creation)
-            },
-        }
-}
-'''

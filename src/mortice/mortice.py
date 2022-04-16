@@ -1,8 +1,9 @@
 # Create a lock for POSIX or NT systems and present a platform agnostic API to users.
+import asyncio
 import io
 import os
 import sys
-import asyncio
+import tempfile
 import time
 from pathlib import Path
 
@@ -53,6 +54,7 @@ class Mortice:
                 lock_mode = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
             n_bytes: int = open_file.seek(0, 2)  # get the full byte size of the file
             msvcrt.locking(open_file.fileno(), lock_mode, n_bytes)
+            print(f'file {open_file.fileno()}, locked for {n_bytes} bytes locked with mode {lock_mode}')
         elif os.name == 'posix':  # POSIX compliant systems
             import fcntl
             if mode in read_modes:
@@ -90,17 +92,27 @@ class Mortice:
             msg: str = f"Unknown platform {sys.platform}.\n Mortice only supports 'Windows NT' and 'POSIX' systems."
             raise RuntimeError(msg)
 
-    def __init__(self, file_path: Path | str, mode: str = 'r', blocking: bool = True, ttl: int = 10) -> None:
-        '''
+    def __init__(self, file_path: Path | str | io.IOBase, mode: str = 'r', blocking: bool = True, ttl: int = 10) -> None:
+        """
         Initialise the Mortice object and give it values for use in its context manager
-        :param file_path: Path or  string pointing to the location of file to be locked
+        :param file_path: Path, file ike object, string pointing to the location of file like object to be locked
         :param mode: mode to open the object with, used to determine lock type
         :param blocking: boolean that determines whether the lock is blocking or nonblocking
         :param ttl: Time To Live, amount of time to block before giving up
-        '''
+        """
         if isinstance(file_path, str):  # convert strings to Paths
             file_path = Path(os.getcwd()).joinpath(file_path)
-        self.open_file: io.TextIOWrapper = open(file=file_path, mode=mode)
+            self.open_file: io.TextIOWrapper = open(file=file_path, mode=mode)
+        elif isinstance(file_path, Path):
+            self.open_file: io.TextIOWrapper = open(file=file_path, mode=mode)
+        elif isinstance(file_path, io.IOBase):
+            self.open_file: io.TextIOWrapper = file_path
+        elif isinstance(file_path, tempfile._TemporaryFileWrapper):
+            self.open_file: tempfile._TemporaryFileWrapper = file_path  # only for testing purposes
+        else:
+            msg: str = f"file_path expected a Path like object,\
+             string to a path, or file like object. got: {type(file_path)}"
+            raise ValueError(msg)
         print(f'file: {self.open_file}')
         self.mode: str = mode
         self.blocking: bool = blocking
@@ -118,10 +130,12 @@ class Mortice:
                 if e.errno == os_errors[os.name][E_WOULD_BLK]:  # file already locked, retry
                     if self.blocking:  # If the caller doesn't mind being blocked, gracefully degrade, otherwise raise e
                         time.sleep(wait_time)
+                        print('blocking cos deadlock')
                         wait_time += 2  # increase wait time
                         if wait_time > self.ttl:  # drop off request, wait is too long
                             raise e
                     else:
+                        print('Not blocking. raise deadlock')
                         raise e
                 else:  # unknown error, raise it
                     raise e
@@ -166,4 +180,4 @@ class Mortice:
             print(f"Exception message: {exc_value}")
             return True
         else:
-            return False
+            return True

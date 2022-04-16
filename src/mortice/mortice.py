@@ -54,7 +54,7 @@ class Mortice:
                 lock_mode = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
             n_bytes: int = open_file.seek(0, 2)  # get the full byte size of the file
             msvcrt.locking(open_file.fileno(), lock_mode, n_bytes)
-            print(f'file {open_file.fileno()}, locked for {n_bytes} bytes locked with mode {lock_mode}')
+            # print(f'file {open_file.name}, locked for {n_bytes} bytes locked with mode {lock_mode}') TODO: use logging instead
         elif os.name == 'posix':  # POSIX compliant systems
             import fcntl
             if mode in read_modes:
@@ -113,7 +113,6 @@ class Mortice:
             msg: str = f"file_path expected a Path like object,\
              string to a path, or file like object. got: {type(file_path)}"
             raise ValueError(msg)
-        print(f'file: {self.open_file}')
         self.mode: str = mode
         self.blocking: bool = blocking
         self.ttl = ttl
@@ -122,20 +121,18 @@ class Mortice:
         wait_time: int = 1
         while True:
             try:
-                print('locking')
                 self.lock_file(self.open_file, self.mode, self.blocking)
-                print('locked')
                 return self.open_file
             except OSError as e:
                 if e.errno == os_errors[os.name][E_WOULD_BLK]:  # file already locked, retry
                     if self.blocking:  # If the caller doesn't mind being blocked, gracefully degrade, otherwise raise e
                         time.sleep(wait_time)
-                        print('blocking cos deadlock')
+                        # TODO: log instead print('blocking cos deadlock')
                         wait_time += 2  # increase wait time
                         if wait_time > self.ttl:  # drop off request, wait is too long
                             raise e
                     else:
-                        print('Not blocking. raise deadlock')
+                        # TODO: log insteadprint('Not blocking. raise deadlock')
                         raise e
                 else:  # unknown error, raise it
                     raise e
@@ -143,15 +140,13 @@ class Mortice:
     def __exit__(self, exc_type, exc_value, traceback) -> bool:
         if isinstance(exc_value, OSError):
             # Handle OS error by errno here...
-            print(f"This exception occurred trying to lock the file: {exc_type}")
-            print(f"Exception message: {exc_value}")
+            # TODO: log insteadprint(f"This exception occurred trying to lock the file: {exc_type}")
+            # TODO: log insteadprint(f"Exception message: {exc_value}")
             if exc_value.errno == os_errors[os.name][E_NOT_LK]:  # already unlocked or no permission
                 return True
             return False
         else:
-            print('unlocking')
             self.unlock_file(self.open_file)
-            print('unlocked')
             return True
 
     async def __aenter__(self) -> io.TextIOWrapper:
@@ -176,8 +171,8 @@ class Mortice:
         self.unlock_file(self.open_file)
         if isinstance(exc_value, OSError):
             # Handle OS error by errno here...
-            print(f"This exception occurred trying to lock the file: {exc_type}")
-            print(f"Exception message: {exc_value}")
+            # TODO: log insteadprint(f"This exception occurred trying to lock the file: {exc_type}")
+            # TODO: log insteadprint(f"Exception message: {exc_value}")
             return True
         else:
             return True
